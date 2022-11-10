@@ -396,6 +396,7 @@ func initXrayTest(t *testing.T, minVersion string) {
 	if !*tests.TestXray {
 		t.Skip("Skipping Xray test. To run Xray test add the '-test.xray=true' option.")
 	}
+	skipTestIfMarkedTo(t)
 	validateXrayVersion(t, minVersion)
 }
 
@@ -465,6 +466,7 @@ func initNativeDockerWithXrayTest(t *testing.T) func() {
 	if !*tests.TestDockerScan || !*tests.TestXray {
 		t.Skip("Skipping Docker scan test. To run Xray Docker test add the '-test.xrayScan=true' and '-test.xray=true' options.")
 	}
+	skipTestIfMarkedTo(t)
 	oldHomeDir := os.Getenv(coreutils.HomeDir)
 	initXrayCli()
 	validateXrayVersion(t, scan.DockerScanMinXrayVersion)

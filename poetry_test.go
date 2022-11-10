@@ -123,6 +123,7 @@ func initPoetryTest(t *testing.T) {
 	if !*tests.TestPoetry {
 		t.Skip("Skipping Poetry test. To run Poetry test add the '-test.poetry=true' option.")
 	}
+	skipTestIfMarkedTo(t)
 	require.True(t, isRepoExist(tests.PoetryRemoteRepo), tests.PoetryRemoteRepo+" test repository doesn't exist.")
 	require.True(t, isRepoExist(tests.PoetryVirtualRepo), tests.PoetryVirtualRepo+" test repository doesn't exist.")
 }

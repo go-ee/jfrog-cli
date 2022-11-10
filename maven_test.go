@@ -160,6 +160,7 @@ func initMavenTest(t *testing.T, disableConfig bool) {
 	if !*tests.TestMaven {
 		t.Skip("Skipping Maven test. To run Maven test add the '-test.maven=true' option.")
 	}
+	skipTestIfMarkedTo(t)
 	if !disableConfig {
 		err := createHomeConfigAndLocalRepo(t, true)
 		assert.NoError(t, err)

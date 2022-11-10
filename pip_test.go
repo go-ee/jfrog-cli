@@ -183,6 +183,7 @@ func initPipTest(t *testing.T) {
 	if !*tests.TestPip {
 		t.Skip("Skipping Pip test. To run Pip test add the '-test.pip=true' option.")
 	}
+	skipTestIfMarkedTo(t)
 	require.True(t, isRepoExist(tests.PypiRemoteRepo), "Pypi test remote repository doesn't exist.")
 	require.True(t, isRepoExist(tests.PypiVirtualRepo), "Pypi test virtual repository doesn't exist.")
 }

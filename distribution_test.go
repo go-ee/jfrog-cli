@@ -84,6 +84,7 @@ func initDistributionTest(t *testing.T) {
 	if !*tests.TestDistribution {
 		t.Skip("Skipping distribution test. To run distribution test add the '-test.distribution=true' option.")
 	}
+	skipTestIfMarkedTo(t)
 }
 
 func cleanDistributionTest(t *testing.T) {

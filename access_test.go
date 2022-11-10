@@ -59,6 +59,7 @@ func initAccessTest(t *testing.T, minVersion string) {
 	if !*tests.TestAccess {
 		t.Skip("Skipping Access test. To run Access test add the '-test.access=true' option.")
 	}
+	skipTestIfMarkedTo(t)
 }
 
 func TestSetupInvitedUser(t *testing.T) {

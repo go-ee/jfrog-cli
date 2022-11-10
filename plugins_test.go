@@ -210,6 +210,7 @@ func initPluginsTest(t *testing.T) {
 	if !*tests.TestPlugins {
 		t.Skip("Skipping Plugins test. To run Plugins test add the '-test.plugins=true' option.")
 	}
+	skipTestIfMarkedTo(t)
 }
 
 func TestPublishInstallCustomServer(t *testing.T) {

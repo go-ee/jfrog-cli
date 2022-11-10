@@ -57,6 +57,7 @@ func initContainerTest(t *testing.T) (containerManagers []container.ContainerMan
 	if len(containerManagers) == 0 {
 		t.Skip("Skipping docker and podman tests.")
 	}
+	skipTestIfMarkedTo(t)
 	return containerManagers
 }
 
@@ -64,6 +65,7 @@ func initNativeDockerWithArtTest(t *testing.T) func() {
 	if !*tests.TestDocker {
 		t.Skip("Skipping native docker test. To run docker test add the '-test.docker=true' option.")
 	}
+	skipTestIfMarkedTo(t)
 	oldHomeDir := os.Getenv(coreutils.HomeDir)
 	servicesManager, err := utils.CreateServiceManager(serverDetails, -1, 0, false)
 	require.NoError(t, err)

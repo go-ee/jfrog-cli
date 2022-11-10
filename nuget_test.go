@@ -26,6 +26,7 @@ func initNugetTest(t *testing.T) {
 	if !*tests.TestNuget {
 		t.Skip("Skipping NuGet test. To run Nuget test add the '-test.nuget=true' option.")
 	}
+	skipTestIfMarkedTo(t)
 	createJfrogHomeConfig(t, true)
 }
 

@@ -246,6 +246,7 @@ func initGoTest(t *testing.T) (tempGoPath string, cleanUp func()) {
 	if !*tests.TestGo {
 		t.Skip("Skipping go test. To run go test add the '-test.go=true' option.")
 	}
+	skipTestIfMarkedTo(t)
 	clientTestUtils.SetEnvAndAssert(t, "GONOSUMDB", "github.com/jfrog")
 	clientTestUtils.UnSetEnvAndAssert(t, "GOMODCACHE")
 	createJfrogHomeConfig(t, true)
