@@ -35,6 +35,7 @@ var skipTests = map[string]bool{
 	"TestXrayAuditNugetMultiProject":                 true,
 	"TestXrayBinaryScanWithBypassArchiveLimits":      true,
 	"TestXrayBinaryScanJson":                         true,
+	"TestXrayAuditPipSimpleJson":                     true,
 	"TestXrayAuditMavenJson":                         true,
 	"TestXrayAuditNugetSimpleJson":                   true,
 	"TestXrayAuditNpmJson":                           true,
