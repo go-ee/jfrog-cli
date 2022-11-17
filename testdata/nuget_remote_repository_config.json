@@ -6,4 +6,5 @@
   "downloadContextPath":"api/v3/package",
   "feedContextPath":"api/v3",
   "v3FeedUrl":"https://api.nuget.org/v3/index.json"
+  "forceNugetAuthentication":true
 }
