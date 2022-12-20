@@ -56,6 +56,28 @@ var skipTests = map[string]bool{
 	"TestXrayAuditPipJsonWithRequirementsFile":       true,
 	"TestXrayAuditPipSimpleJsonWithRequirementsFile": true,
 	"TestXrayAuditPipJson":                           true,
+	//NPM
+	"TestNpmNativeSyntax":                            true,
+	"TestNpmLegacy":                                  true,
+	"TestNpmConditionalUpload":                       true,
+	"TestNpmWithGlobalConfig":                        true,
+	"TestNpmPublishDetailedSummary":                  true,
+	"TestNpmPublishWithDeploymentView":               true,
+	"TestNpmNativeSyntax/npm_i_with_scoped_project":  true,
+	"TestNpmNativeSyntax/npm_i_with_npmrc_project":   true,
+	"TestNpmLegacy/npm_i_with_production":            true,
+	"TestNpmNativeSyntax/npm_i_with_production":      true,
+	"TestNpmLegacy/npm_i_with_npmrc_project":         true,
+	"TestNpmNativeSyntax/npm_postinstall":            true,
+	"TestNpmLegacy/npm_i_with_scoped_project":        true,
+	"TestNpmLegacy/npm_postinstall":                  true,
+	"TestNpmLegacy/npm_i_with_module":                true,
+	"TestNpmNativeSyntax/npm_i_with_module":          true,
+	"TestNpmLegacy/npm_ci":                           true,
+	"TestNpmLegacy/npm_ci_with_module":               true,
+	"TestNpmNativeSyntax/npm_ci_with_module":         true,
+	"TestNpmNativeSyntax/npm_ci":                     true,
+	"TestNpmPackInstall":                             true,
 }
 
 func skipTestIfMarkedTo(t *testing.T) {
