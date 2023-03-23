@@ -9,9 +9,11 @@ var skipTests = map[string]bool{
 	//Access
 	"TestRefreshableAccessTokens": true,
 	//Artifactory
-	"TestArtifactoryProxy":                          true,
-	"TestArtifactoryUploadAsArchiveWithIncludeDirs": true,
-	"TestGitLfsCleanup":                             true,
+	"TestArtifactoryProxy":			                          	true,
+	"TestArtifactoryUploadAsArchiveWithIncludeDirs": 			true,
+	"TestGitLfsCleanup":							true,
+	"TestArtifactoryDownloadByBuildUsingSimpleDownloadWithProject":      	true,
+	"TestArtifactoryDownloadWithEnvProject":                             	true,
 	//GO
 	"TestUnitTests": true,
 	//Pip
