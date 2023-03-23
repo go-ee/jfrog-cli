@@ -60,6 +60,14 @@ var skipTests = map[string]bool{
 	"TestXrayAuditPipJson":                           true,
 	"TestXrayAuditGradleJson":                        true,
 	"TestXrayAuditGradleSimpleJson":                  true,
+	//Gradle
+	"TestGradleBuildConditionalUpload":               true,
+	"TestGradleBuildWithServerIDWithUsesPlugin":      true,
+	"TestGradleBuildWithServerIDAndDetailedSummary":  true,
+	"TestGradleWithDeploymentView":                   true,
+	"TestGradleBuildWithServerID":                    true,
+	//Maven
+	"TestInsecureTlsMavenBuild":                      true,
 	//NPM
 	"TestNpmNativeSyntax":                            true,
 	"TestNpmLegacy":                                  true,
