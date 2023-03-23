@@ -58,6 +58,8 @@ var skipTests = map[string]bool{
 	"TestXrayAuditPipJsonWithRequirementsFile":       true,
 	"TestXrayAuditPipSimpleJsonWithRequirementsFile": true,
 	"TestXrayAuditPipJson":                           true,
+	"TestXrayAuditGradleJson":                        true,
+	"TestXrayAuditGradleSimpleJson":                  true,
 	//NPM
 	"TestNpmNativeSyntax":                            true,
 	"TestNpmLegacy":                                  true,
