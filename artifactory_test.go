@@ -4508,9 +4508,20 @@ func initArtifactoryTest(t *testing.T, minVersion string) {
 	if !*tests.TestArtifactory {
 		t.Skip("Skipping artifactory test. To run artifactory test add the '-test.artifactory=true' option.")
 	}
+	skipTestIfMarkedTo(t)
 	if minVersion != "" {
 		validateArtifactoryVersion(t, minVersion)
 	}
+}
+
+func initArtifactoryProjectTest(t *testing.T, minVersion string) {
+	if !*tests.TestArtifactoryProject {
+		t.Skip("Skipping artifactory project test. To run artifactory test add the '-test.artifactoryProject=true' option.")
+	}
+	if minVersion != "" {
+		validateArtifactoryVersion(t, minVersion)
+	}
+	skipTestIfMarkedTo(t)
 }
 
 func validateArtifactoryVersion(t *testing.T, minVersion string) {
