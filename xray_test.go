@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/audit/yarn"
+	"github.com/jfrog/jfrog-cli/utils/cliutils"
 	"os"
 	"os/exec"
 	"path"
@@ -152,28 +154,43 @@ func testXrayAuditNpm(t *testing.T, format string) string {
 }
 
 func TestXrayAuditYarnJson(t *testing.T) {
-	output := testXrayAuditYarn(t, string(utils.Json))
-	verifyJsonScanResults(t, output, 0, 1, 1)
+	testXrayAuditYarn(t, "yarn", func() {
+		output := runXrayAuditYarnWithOutput(t, string(utils.Json))
+		verifyJsonScanResults(t, output, 0, 1, 1)
+	})
 }
 
 func TestXrayAuditYarnSimpleJson(t *testing.T) {
-	output := testXrayAuditYarn(t, string(utils.SimpleJson))
-	verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+	testXrayAuditYarn(t, "yarn", func() {
+		output := runXrayAuditYarnWithOutput(t, string(utils.SimpleJson))
+		verifySimpleJsonScanResults(t, output, 0, 0, 1, 1)
+	})
 }
 
-func testXrayAuditYarn(t *testing.T, format string) string {
+func TestXrayAuditYarnV1(t *testing.T) {
+	testXrayAuditYarn(t, "yarn-v1", func() {
+		err := xrayCli.Exec("audit", "--yarn")
+		assert.ErrorContains(t, err, yarn.YarnV1ErrorPrefix)
+	})
+}
+
+func testXrayAuditYarn(t *testing.T, projectDirName string, yarnCmd func()) {
 	initXrayTest(t, commands.GraphScanMinXrayVersion)
 	tempDirPath, createTempDirCallback := coreTests.CreateTempDirWithCallbackAndAssert(t)
 	defer createTempDirCallback()
-	yarnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", "yarn")
+	yarnProjectPath := filepath.Join(filepath.FromSlash(tests.GetTestResourcesPath()), "xray", projectDirName)
 	// Copy the Yarn project from the testdata to a temp directory
 	assert.NoError(t, fileutils.CopyDir(yarnProjectPath, tempDirPath, true, nil))
 	prevWd := changeWD(t, tempDirPath)
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
-	// Run yarn install before executing jf audit --yarn
+	// Run yarn install before executing jf audit --yarn. Return error to assert according to test.
 	assert.NoError(t, exec.Command("yarn").Run())
 	// Add dummy descriptor file to check that we run only specific audit
 	addDummyPackageDescriptor(t, true)
+	yarnCmd()
+}
+
+func runXrayAuditYarnWithOutput(t *testing.T, format string) string {
 	return xrayCli.RunCliCmdWithOutput(t, "audit", "--yarn", "--licenses", "--format="+format)
 }
 
@@ -284,8 +301,7 @@ func TestXrayAuditDetectTech(t *testing.T) {
 	err := json.Unmarshal([]byte(output), &results)
 	assert.NoError(t, err)
 	// Expects the ImpactedPackageType of the known vulnerability to be maven
-	assert.Equal(t, strings.ToLower(results.Vulnerabilities[0].ImpactedPackageType), "maven")
-
+	assert.Equal(t, strings.ToLower(results.Vulnerabilities[0].ImpactedDependencyType), "maven")
 }
 
 func TestXrayAuditMultiProjects(t *testing.T) {
@@ -297,7 +313,7 @@ func TestXrayAuditMultiProjects(t *testing.T) {
 	assert.NoError(t, fileutils.CopyDir(multiProject, tempDirPath, true, nil))
 	workingDirsFlag := fmt.Sprintf("--working-dirs=%s, %s ,%s", filepath.Join(tempDirPath, "maven"), filepath.Join(tempDirPath, "nuget", "single"), filepath.Join(tempDirPath, "python", "pip"))
 	output := xrayCli.RunCliCmdWithOutput(t, "audit", "--format="+string(utils.SimpleJson), workingDirsFlag)
-	verifySimpleJsonScanResults(t, output, 0, 0, 34, 0)
+	verifySimpleJsonScanResults(t, output, 0, 0, 30, 0)
 }
 
 func TestXrayAuditPipJson(t *testing.T) {
@@ -331,7 +347,12 @@ func testXrayAuditPip(t *testing.T, format, requirementsFile string) string {
 	defer clientTestUtils.ChangeDirAndAssert(t, prevWd)
 	// Add dummy descriptor file to check that we run only specific audit
 	addDummyPackageDescriptor(t, false)
-	return xrayCli.RunCliCmdWithOutput(t, "audit", "--pip", "--licenses", "--format="+format, "--requirements-file="+requirementsFile)
+	args := []string{"audit", "--pip", "--licenses", "--format=" + format}
+	if requirementsFile != "" {
+		args = append(args, "--requirements-file="+requirementsFile)
+
+	}
+	return xrayCli.RunCliCmdWithOutput(t, args...)
 }
 
 func TestXrayAuditPipenvJson(t *testing.T) {
@@ -406,7 +427,7 @@ func validateXrayVersion(t *testing.T, minVersion string) {
 		assert.NoError(t, err)
 		return
 	}
-	err = commands.ValidateXrayMinimumVersion(xrayVersion.GetVersion(), minVersion)
+	err = coreutils.ValidateMinimumVersion(coreutils.Xray, xrayVersion.GetVersion(), minVersion)
 	if err != nil {
 		t.Skip(err)
 	}
@@ -572,4 +593,20 @@ func createTestWatch(t *testing.T) (string, func()) {
 		assert.NoError(t, xrayManager.DeleteWatch(watchParams.Name))
 		assert.NoError(t, xrayManager.DeletePolicy(policyParams.Name))
 	}
+}
+
+func TestXrayOfflineDBSyncV3(t *testing.T) {
+	initXrayTest(t, "")
+
+	// Validate license-id
+	err := xrayCli.WithoutCredentials().Exec("xr", "ou")
+	assert.EqualError(t, err, "the --license-id option is mandatory")
+	// Periodic valid only with stream
+	err = xrayCli.WithoutCredentials().Exec("xr", "ou", "--license-id=123", "--periodic")
+	assert.EqualError(t, err, fmt.Sprintf("the %s option is only valid with %s", cliutils.Periodic, cliutils.Stream))
+	err = xrayCli.WithoutCredentials().Exec("xr", "ou", "--license-id=123", "--stream=", "--periodic")
+	assert.EqualError(t, err, fmt.Sprintf("the %s option is only valid with %s", cliutils.Periodic, cliutils.Stream))
+	// Invalid stream
+	err = xrayCli.WithoutCredentials().Exec("xr", "ou", "--license-id=123", "--stream=bad_name")
+	assert.ErrorContains(t, err, "Invalid stream type")
 }

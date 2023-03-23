@@ -378,15 +378,16 @@ func GetCommands() []cli.Command {
 			},
 		},
 		{
-			Name:         "terraform",
-			Flags:        cliutils.GetCommandFlags(cliutils.Terraform),
-			Aliases:      []string{"tf"},
-			Usage:        terraformdocs.GetDescription(),
-			HelpName:     corecommon.CreateUsage("terraform", terraformdocs.GetDescription(), terraformdocs.Usage),
-			UsageText:    terraformdocs.GetArguments(),
-			ArgsUsage:    common.CreateEnvVars(),
-			BashComplete: corecommon.CreateBashCompletionFunc(),
-			Category:     buildToolsCategory,
+			Name:            "terraform",
+			Flags:           cliutils.GetCommandFlags(cliutils.Terraform),
+			Aliases:         []string{"tf"},
+			Usage:           terraformdocs.GetDescription(),
+			HelpName:        corecommon.CreateUsage("terraform", terraformdocs.GetDescription(), terraformdocs.Usage),
+			UsageText:       terraformdocs.GetArguments(),
+			ArgsUsage:       common.CreateEnvVars(),
+			SkipFlagParsing: true,
+			BashComplete:    corecommon.CreateBashCompletionFunc(),
+			Category:        buildToolsCategory,
 			Action: func(c *cli.Context) error {
 				return terraformCmd(c)
 			},
@@ -705,16 +706,21 @@ func dockerCmd(c *cli.Context) error {
 			}
 		}
 	}
+	var err error
 	switch cmd {
 	case "pull":
-		return pullCmd(c, image)
+		err = pullCmd(c, image)
 	case "push":
-		return pushCmd(c, image)
+		err = pushCmd(c, image)
 	case "scan":
 		return scan.DockerScan(c, image)
 	default:
-		return dockerNativeCmd(c)
+		err = dockerNativeCmd(c)
 	}
+	if err == nil {
+		log.Output(coreutils.PrintTitle("Hint: Use 'jf docker scan' to scan a local Docker image for security vulnerabilities with JFrog Xray"))
+	}
+	return err
 }
 
 func pullCmd(c *cli.Context, image string) error {
@@ -929,7 +935,7 @@ func pythonCmd(c *cli.Context, projectType utils.ProjectType) error {
 		pythonCommand.SetServerDetails(rtDetails).SetRepo(pythonConfig.TargetRepo()).SetCommandName(cmdName).SetArgs(filteredArgs)
 		return commands.Exec(pythonCommand)
 	}
-	return errorutils.CheckErrorf("%s is not suppurted", projectType)
+	return errorutils.CheckErrorf("%s is not supported", projectType)
 }
 
 func terraformCmd(c *cli.Context) error {
@@ -964,13 +970,12 @@ func getTerraformConfigAndArgs(c *cli.Context) (configFilePath string, args []st
 }
 
 func terraformPublishCmd(configFilePath string, args []string, c *cli.Context) error {
-	artDetails, err := cliutils.CreateArtifactoryDetailsByFlags(c)
-	if err != nil {
+	terraformCmd := terraform.NewTerraformPublishCommand()
+	terraformCmd.SetConfigFilePath(configFilePath).SetArgs(args)
+	if err := terraformCmd.Init(); err != nil {
 		return err
 	}
-	terraformCmd := terraform.NewTerraformPublishCommand()
-	terraformCmd.SetConfigFilePath(configFilePath).SetArgs(args).SetServerDetails(artDetails)
-	err = commands.Exec(terraformCmd)
+	err := commands.Exec(terraformCmd)
 	result := terraformCmd.Result()
 	return cliutils.PrintBriefSummaryReport(result.SuccessCount(), result.FailCount(), cliutils.IsFailNoOp(c), err)
 }

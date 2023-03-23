@@ -2,6 +2,7 @@ package cliutils
 
 import (
 	"fmt"
+	"github.com/jfrog/jfrog-cli-core/v2/xray/commands/offlineupdate"
 	"sort"
 	"strconv"
 
@@ -81,6 +82,7 @@ const (
 	GroupAddUsers          = "group-add-users"
 	GroupDelete            = "group-delete"
 	TransferConfig         = "transfer-config"
+	TransferConfigMerge    = "transfer-config-merge"
 	passphrase             = "passphrase"
 
 	// Distribution's Command Keys
@@ -359,6 +361,11 @@ const (
 	// Unique go flags
 	noFallback = "no-fallback"
 
+	// Unique Terraform flags
+	namespace = "namespace"
+	provider  = "provider"
+	tag       = "tag"
+
 	// Template user flags
 	vars = "vars"
 
@@ -414,13 +421,13 @@ const (
 	xrUrl = "xr-url"
 
 	// Unique offline-update flags
-	licenseId        = "license-id"
-	from             = "from"
-	to               = "to"
-	Version          = "version"
-	target           = "target"
-	DBSyncV3         = "dbsyncv3"
-	PeriodicDBSyncV3 = "periodic"
+	licenseId = "license-id"
+	from      = "from"
+	to        = "to"
+	Version   = "version"
+	target    = "target"
+	Stream    = "stream"
+	Periodic  = "periodic"
 
 	// Unique scan flags
 	scanPrefix          = "scan-"
@@ -431,6 +438,8 @@ const (
 	BypassArchiveLimits = "bypass-archive-limits"
 
 	// Audit commands
+	auditPrefix      = "audit-"
+	useWrapperAudit  = auditPrefix + UseWrapper
 	ExcludeTestDeps  = "exclude-test-deps"
 	DepType          = "dep-type"
 	RequirementsFile = "requirements-file"
@@ -483,11 +492,28 @@ const (
 	IgnoreState         = "ignore-state"
 	ProxyKey            = "proxy-key"
 	transferFilesStatus = transferFilesPrefix + "status"
+	Stop                = "stop"
 	PreChecks           = "prechecks"
 
 	// Transfer flags
-	IncludeRepos = "include-repos"
-	ExcludeRepos = "exclude-repos"
+	IncludeRepos    = "include-repos"
+	ExcludeRepos    = "exclude-repos"
+	IncludeProjects = "include-projects"
+	ExcludeProjects = "exclude-projects"
+
+	// *** JFrog Pipelines Commands' flags ***
+	// Base flags
+	branch       = "branch"
+	Trigger      = "trigger"
+	pipelineName = "pipeline-name"
+	name         = "name"
+	Validate     = "validate"
+	Resources    = "resources"
+	monitor      = "monitor"
+	repository   = "repository"
+	singleBranch = "single-branch"
+	Sync         = "sync"
+	SyncStatus   = "sync-status"
 
 	// *** TransferInstall Commands' flags ***
 	installPluginPrefix  = "install-"
@@ -1001,10 +1027,6 @@ var flagsMap = map[string]cli.Flag{
 		Name:  usesPlugin,
 		Usage: "[Default: false] Set to true if the Gradle Artifactory Plugin is already applied in the build script.` `",
 	},
-	UseWrapper: cli.BoolFlag{
-		Name:  UseWrapper,
-		Usage: "[Default: false] [Gradle] Set to true if you'd like to use the Gradle wrapper.` `",
-	},
 	deployMavenDesc: cli.BoolTFlag{
 		Name:  deployMavenDesc,
 		Usage: "[Default: true] Set to false if you do not wish to deploy Maven descriptors.` `",
@@ -1041,6 +1063,18 @@ var flagsMap = map[string]cli.Flag{
 	noFallback: cli.BoolTFlag{
 		Name:  noFallback,
 		Usage: "[Default: false] Set to true to avoid downloading packages from the VCS, if they are missing in Artifactory.` `",
+	},
+	namespace: cli.StringFlag{
+		Name:  namespace,
+		Usage: "[Mandatory] Terraform namespace.` `",
+	},
+	provider: cli.StringFlag{
+		Name:  provider,
+		Usage: "[Mandatory] Terraform provider.` `",
+	},
+	tag: cli.StringFlag{
+		Name:  tag,
+		Usage: "[Mandatory] Terraform package tag.` `",
 	},
 	vars: cli.StringFlag{
 		Name:  vars,
@@ -1193,6 +1227,10 @@ var flagsMap = map[string]cli.Flag{
 		Name:  licenseId,
 		Usage: "[Mandatory] Xray license ID.` `",
 	},
+	Stream: cli.StringFlag{
+		Name:  Stream,
+		Usage: fmt.Sprintf("[Optional] Xray DBSync V3 stream, Possible values are: %s.` `", offlineupdate.NewValidStreams().GetValidStreamsString()),
+	},
 	from: cli.StringFlag{
 		Name:  from,
 		Usage: "[Optional] From update date in YYYY-MM-DD format.` `",
@@ -1209,13 +1247,13 @@ var flagsMap = map[string]cli.Flag{
 		Name:  target,
 		Usage: "[Default: ./] Path for downloaded update files.` `",
 	},
-	DBSyncV3: cli.BoolFlag{
-		Name:  DBSyncV3,
-		Usage: "[Default: false] Set to true to use Xray DBSync V3. ` `",
+	Periodic: cli.BoolFlag{
+		Name:  Periodic,
+		Usage: fmt.Sprintf("[Default: false] Set to true to get the Xray DBSync V3 Periodic Package (Use with %s flag). ` `", Stream),
 	},
-	PeriodicDBSyncV3: cli.BoolFlag{
-		Name:  PeriodicDBSyncV3,
-		Usage: fmt.Sprintf("[Default: false] Set to true to get the Xray DBSync V3 Periodic Package (Use with %s flag). ` `", DBSyncV3),
+	useWrapperAudit: cli.BoolTFlag{
+		Name:  UseWrapper,
+		Usage: "[Default: true] Set to false if you wish to not use the gradle or maven wrapper. ` `",
 	},
 	ExcludeTestDeps: cli.BoolFlag{
 		Name:  ExcludeTestDeps,
@@ -1241,13 +1279,17 @@ var flagsMap = map[string]cli.Flag{
 		Name:  ExtendedTable,
 		Usage: "[Default: false] Set to true if you'd like the table to include extended fields such as 'CVSS' & 'Xray Issue Id'. Ignored if provided 'format' is not 'table'. ` `",
 	},
+	UseWrapper: cli.BoolFlag{
+		Name:  UseWrapper,
+		Usage: "[Default: false] Set to true if you wish to use the wrapper. ` `",
+	},
 	licenses: cli.BoolFlag{
 		Name:  licenses,
 		Usage: "[Default: false] Set to true if you'd like to receive licenses from Xray scanning. ` `",
 	},
 	vuln: cli.BoolFlag{
 		Name:  vuln,
-		Usage: "[Default: false] Set to true if you'd like to receive all vulnerabilities, regardless of the policy configured in Xray. ` `",
+		Usage: "[Default: false] Set to true if you'd like to receive an additional view of all vulnerabilities, regardless of the policy configured in Xray. Ignored if provided 'format' is `sarif` `",
 	},
 	repoPath: cli.StringFlag{
 		Name:  repoPath,
@@ -1406,6 +1448,14 @@ var flagsMap = map[string]cli.Flag{
 		Name:  ExcludeRepos,
 		Usage: "[Optional] A list of semicolon separated repositories to exclude from the transfer. You can use wildcards to specify patterns for the repositories' names.` `",
 	},
+	IncludeProjects: cli.StringFlag{
+		Name:  IncludeProjects,
+		Usage: "[Optional] A list of semicolon separated JFrog Project keys to include in the transfer. You can use wildcards to specify patterns for the JFrog Project keys.` `",
+	},
+	ExcludeProjects: cli.StringFlag{
+		Name:  ExcludeProjects,
+		Usage: "[Optional] A list of semicolon separated JFrog Projects to exclude from the transfer. You can use wildcards to specify patterns for the project keys.` `",
+	},
 	IgnoreState: cli.BoolFlag{
 		Name:  IgnoreState,
 		Usage: "[Default: false] Set to true to ignore the saved state from previous transfer-files operations.` `",
@@ -1417,6 +1467,30 @@ var flagsMap = map[string]cli.Flag{
 	transferFilesStatus: cli.BoolFlag{
 		Name:  Status,
 		Usage: "[Default: false] Set to true to show the status of the transfer-files command currently in progress.` `",
+	},
+	branch: cli.StringFlag{
+		Name:  branch,
+		Usage: "[Optional] Branch name to filter.` `",
+	},
+	pipelineName: cli.StringFlag{
+		Name:  pipelineName,
+		Usage: "[Optional] Pipeline name to filter.` `",
+	},
+	monitor: cli.BoolFlag{
+		Name:  monitor,
+		Usage: "[Default: false] Monitor pipeline status.` `",
+	},
+	repository: cli.StringFlag{
+		Name:  repository,
+		Usage: "[Optional] Repository name to filter resource.` `",
+	},
+	singleBranch: cli.BoolFlag{
+		Name:  singleBranch,
+		Usage: "[Default: false] Single branch to filter multi branches and single branch pipelines sources.` `",
+	},
+	Stop: cli.BoolFlag{
+		Name:  Stop,
+		Usage: "[Default: false] Set to true to stop the transfer-files command currently in progress. Useful when running the transfer-files command in the background.` `",
 	},
 	installPluginVersion: cli.StringFlag{
 		Name:  Version,
@@ -1534,7 +1608,7 @@ var commandFlags = map[string][]string{
 		glcQuiet, InsecureTls, retries, retryWaitTime,
 	},
 	MvnConfig: {
-		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, includePatterns, excludePatterns,
+		global, serverIdResolve, serverIdDeploy, repoResolveReleases, repoResolveSnapshots, repoDeployReleases, repoDeploySnapshots, includePatterns, excludePatterns, UseWrapper,
 	},
 	GradleConfig: {
 		global, serverIdResolve, serverIdDeploy, repoResolve, repoDeploy, usesPlugin, UseWrapper, deployMavenDesc,
@@ -1548,7 +1622,7 @@ var commandFlags = map[string][]string{
 	},
 	Docker: {
 		buildName, buildNumber, module, project,
-		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		serverId, skipLogin, threads, detailedSummary, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, BypassArchiveLimits,
 	},
 	DockerPush: {
 		buildName, buildNumber, module, project,
@@ -1610,10 +1684,14 @@ var commandFlags = map[string][]string{
 		global, serverIdDeploy, repoDeploy,
 	},
 	Terraform: {
-		url, user, password, accessToken,
+		namespace, provider, tag, exclusions,
+		buildName, buildNumber, module, project,
 	},
 	TransferConfig: {
-		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir,
+		Force, Verbose, IncludeRepos, ExcludeRepos, WorkingDir, PreChecks,
+	},
+	TransferConfigMerge: {
+		IncludeRepos, ExcludeRepos, IncludeProjects, ExcludeProjects,
 	},
 	Ping: {
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, ClientCertPath,
@@ -1703,27 +1781,27 @@ var commandFlags = map[string][]string{
 		url, user, password, accessToken, sshPassphrase, sshKeyPath, serverId, deleteQuiet,
 	},
 	TransferFiles: {
-		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus, PreChecks,
+		Filestore, IncludeRepos, ExcludeRepos, IgnoreState, ProxyKey, transferFilesStatus, Stop, PreChecks,
 	},
 	TransferInstall: {
 		installPluginVersion, InstallPluginSrcDir, InstallPluginHomeDir,
 	},
 	// Xray's commands
 	OfflineUpdate: {
-		licenseId, from, to, Version, target, DBSyncV3, PeriodicDBSyncV3,
+		licenseId, from, to, Version, target, Stream, Periodic,
 	},
 	XrCurl: {
 		serverId,
 	},
 	Audit: {
 		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, ExcludeTestDeps,
-		UseWrapper, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry,
+		useWrapperAudit, DepType, RequirementsFile, fail, ExtendedTable, workingDirs, Mvn, Gradle, Npm, Yarn, Go, Nuget, Pip, Pipenv, Poetry,
 	},
 	AuditMvn: {
-		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		xrUrl, user, password, accessToken, serverId, InsecureTls, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable, useWrapperAudit,
 	},
 	AuditGradle: {
-		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, UseWrapper, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
+		xrUrl, user, password, accessToken, serverId, ExcludeTestDeps, useWrapperAudit, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
 	},
 	AuditNpm: {
 		xrUrl, user, password, accessToken, serverId, DepType, project, watches, repoPath, licenses, xrOutput, fail, ExtendedTable,
@@ -1779,6 +1857,25 @@ var commandFlags = map[string][]string{
 		setupFormat,
 	},
 	Intro: {},
+	// Pipelines commands
+	Status: {
+		branch, serverId, pipelineName, monitor, singleBranch,
+	},
+	Trigger: {
+		serverId, singleBranch,
+	},
+	Validate: {
+		Resources, serverId,
+	},
+	Version: {
+		serverId,
+	},
+	Sync: {
+		serverId,
+	},
+	SyncStatus: {
+		branch, repository, serverId,
+	},
 }
 
 func GetCommandFlags(cmd string) []cli.Flag {

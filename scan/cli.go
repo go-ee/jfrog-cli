@@ -1,6 +1,7 @@
 package scan
 
 import (
+	xrutils "github.com/jfrog/jfrog-cli-core/v2/xray/utils"
 	"os"
 	"strings"
 
@@ -118,7 +119,7 @@ func GetCommands() []cli.Command {
 		{
 			Name:         "audit-pipenv",
 			Category:     auditScanCategory,
-			Flags:        cliutils.GetCommandFlags(cliutils.AuditPip),
+			Flags:        cliutils.GetCommandFlags(cliutils.AuditPipenv),
 			Aliases:      []string{"ape"},
 			Usage:        auditpipenvdocs.GetDescription(),
 			HelpName:     corecommondocs.CreateUsage("audit-pipenv", auditpipenvdocs.GetDescription(), auditpipenvdocs.Usage),
@@ -226,7 +227,7 @@ func createGenericAuditCmd(c *cli.Context) (*audit.GenericAuditCommand, error) {
 	}
 
 	return auditCmd.SetExcludeTestDependencies(c.Bool(cliutils.ExcludeTestDeps)).
-			SetUseWrapper(c.Bool(cliutils.UseWrapper)).
+			SetUseWrapper(c.BoolT(cliutils.UseWrapper)).
 			SetInsecureTls(c.Bool(cliutils.InsecureTls)).
 			SetNpmScope(c.String(cliutils.DepType)).
 			SetPipRequirementsFile(c.String(cliutils.RequirementsFile)),
@@ -310,10 +311,13 @@ func BuildScan(c *cli.Context) error {
 		SetServerDetails(serverDetails).
 		SetFailBuild(c.BoolT("fail")).
 		SetBuildConfiguration(buildConfiguration).
-		SetIncludeVulnerabilities(c.Bool("vuln")).
 		SetOutputFormat(format).
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
 		SetRescan(c.Bool("rescan"))
+	if format != xrutils.Sarif {
+		// Sarif shouldn't include the additional all-vulnerabilities info that received by adding the vuln flag
+		buildScanCmd.SetIncludeVulnerabilities(c.Bool("vuln"))
+	}
 	return commands.Exec(buildScanCmd)
 }
 
@@ -324,6 +328,10 @@ func DockerScan(c *cli.Context, image string) error {
 	if image == "" {
 		return cli.ShowCommandHelp(c, "dockerscanhelp")
 	}
+	err := validateXrayContext(c)
+	if err != nil {
+		return err
+	}
 	serverDetails, err := createServerDetailsWithConfigOffer(c)
 	if err != nil {
 		return err
@@ -333,7 +341,9 @@ func DockerScan(c *cli.Context, image string) error {
 	if err != nil {
 		return err
 	}
-	containerScanCommand.SetServerDetails(serverDetails).
+	containerScanCommand.SetImageTag(c.Args().Get(1)).
+		SetTargetRepoPath(addTrailingSlashToRepoPathIfNeeded(c)).
+		SetServerDetails(serverDetails).
 		SetOutputFormat(format).
 		SetProject(c.String("project")).
 		SetIncludeVulnerabilities(shouldIncludeVulnerabilities(c)).
@@ -342,16 +352,15 @@ func DockerScan(c *cli.Context, image string) error {
 		SetPrintExtendedTable(c.Bool(cliutils.ExtendedTable)).
 		SetBypassArchiveLimits(c.Bool(cliutils.BypassArchiveLimits))
 	if c.String("watches") != "" {
-		containerScanCommand.SetWatches(strings.Split(c.String("watches"), ","))
+		containerScanCommand.SetWatches(splitAndTrim(c.String("watches"), ","))
 	}
-	containerScanCommand.SetImageTag(c.Args().Get(1))
 	return progressbar.ExecWithProgress(containerScanCommand)
 }
 
 func addTrailingSlashToRepoPathIfNeeded(c *cli.Context) string {
 	repoPath := c.String("repo-path")
 	if repoPath != "" && !strings.Contains(repoPath, "/") {
-		// In case a only repo name was provided (no path) we are adding a trailing slash.
+		// In case only repo name was provided (no path) we are adding a trailing slash.
 		repoPath += "/"
 	}
 	return repoPath
