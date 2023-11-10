@@ -662,7 +662,7 @@ func handleNewLocalRepository(serviceDetails *utilsConfig.ServerDetails, technol
 	// Create local repository
 	for {
 		var newLocalRepo string
-		ioutils.ScanFromConsole("Repository Name", &newLocalRepo, repoutils.RepoDefaultName[technologyType][repoutils.Local])
+		ioutils.ScanFromConsole("Repository Label", &newLocalRepo, repoutils.RepoDefaultName[technologyType][repoutils.Local])
 		err := CreateLocalRepo(serviceDetails, technologyType, newLocalRepo)
 		if err != nil {
 			log.Error(err)
@@ -717,7 +717,7 @@ func (cc *CiSetupCommand) interactivelyCreateRepos(technologyType coreutils.Tech
 	if remoteRepo == NewRepository {
 		for {
 			var repoName, repoUrl string
-			ioutils.ScanFromConsole("Repository Name", &repoName, repoutils.RepoDefaultName[technologyType][repoutils.Remote])
+			ioutils.ScanFromConsole("Repository Label", &repoName, repoutils.RepoDefaultName[technologyType][repoutils.Remote])
 			ioutils.ScanFromConsole("Repository URL", &repoUrl, repoutils.RepoDefaultName[technologyType][repoutils.RemoteUrl])
 			err = CreateRemoteRepo(serviceDetails, technologyType, repoName, repoUrl)
 			if err != nil {

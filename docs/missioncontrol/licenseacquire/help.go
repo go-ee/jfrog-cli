@@ -10,6 +10,6 @@ func GetArguments() string {
 	return `	Bucket ID
 		Bucket name or identifier to acquire license from.
 
-	Name
+	Label
 		A custom name used to mark the license as taken. Can be a JPD ID or a temporary name. If the license does not end up being used by a JPD, this is the name that should be used to release the license.`
 }

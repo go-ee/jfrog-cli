@@ -218,7 +218,7 @@ func getCommands() []cli.Command {
 			},
 		},
 		//{
-		//	Name:         "invite",
+		//	Label:         "invite",
 		//	Usage:        invite.GetDescription(),
 		//	HelpName:     corecommon.CreateUsage("invite", invite.GetDescription(), invite.Usage),
 		//	ArgsUsage:    common.CreateEnvVars(),
@@ -274,9 +274,9 @@ VERSION:
 AUTHOR(S):
    {{range .Authors}}{{ . }}{{end}}
    {{end}}{{if .VisibleCommands}}
-COMMANDS:{{range .VisibleCategories}}{{if .Name}}
+COMMANDS:{{range .VisibleCategories}}{{if .Label}}
 
-   {{.Name}}:{{end}}{{range .VisibleCommands}}
+   {{.Label}}:{{end}}{{range .VisibleCommands}}
      {{join .Names ", "}}{{ "\t" }}{{if .Description}}{{.Description}}{{else}}{{.Usage}}{{end}}{{end}}{{end}}{{end}}{{if .VisibleFlags}}
 
 GLOBAL OPTIONS:
